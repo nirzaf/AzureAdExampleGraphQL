@@ -11,39 +11,36 @@ public class SwaggerAuthorizeOperationFilter : IOperationFilter
     {
         var controllerAuthorize = context.MethodInfo.DeclaringType?.GetCustomAttribute<AuthorizeAttribute>();
         var methodAuthorize = context.MethodInfo.GetCustomAttribute<AuthorizeAttribute>();
-        var hasAuthorize =
-            controllerAuthorize != null 
-            || methodAuthorize != null;
+        var hasAuthorize = controllerAuthorize != null || methodAuthorize != null;
 
-        if (hasAuthorize)
+        if (!hasAuthorize) return;
+        
+        operation.Responses.Add("401", new OpenApiResponse { Description = "Unauthorized" });
+        operation.Responses.Add("403", new OpenApiResponse { Description = "Forbidden" });
+
+        var roles = (controllerAuthorize?.Roles != null
+                ? controllerAuthorize.Roles.Split(",").Select(s => s.Trim())
+                : Enumerable.Empty<string>())
+            .Concat(methodAuthorize?.Roles != null
+                ? methodAuthorize.Roles.Split(",").Select(s => s.Trim())
+                : Enumerable.Empty<string>())
+            .ToArray();
+
+        operation.Security = new List<OpenApiSecurityRequirement>
         {
-            operation.Responses.Add("401", new OpenApiResponse { Description = "Unauthorized" });
-            operation.Responses.Add("403", new OpenApiResponse { Description = "Forbidden" });
-
-            var roles = (controllerAuthorize?.Roles != null
-                    ? controllerAuthorize.Roles.Split(",").Select(s => s.Trim())
-                    : Enumerable.Empty<string>())
-                .Concat(methodAuthorize?.Roles != null
-                    ? methodAuthorize.Roles.Split(",").Select(s => s.Trim())
-                    : Enumerable.Empty<string>())
-                .ToArray();
-
-            operation.Security = new List<OpenApiSecurityRequirement>
+            new()
             {
-                new()
-                {
-                    [
-                        new OpenApiSecurityScheme
+                [
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "OAuth Auth Code"
-                            }
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "OAuth Auth Code"
                         }
-                    ] = roles
-                }
-            };
-        }
+                    }
+                ] = roles
+            }
+        };
     }
 }

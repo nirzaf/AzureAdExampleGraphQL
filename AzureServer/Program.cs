@@ -72,11 +72,11 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllers();
 });
 
-SeedDatabase();
+await SeedDatabase();
 
 app.Run();
 
-void SeedDatabase()
+async Task SeedDatabase()
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<TodoContext>();
@@ -85,6 +85,6 @@ void SeedDatabase()
     db.TodoItems.Add(new TodoItem {Name = "Todo item 3"});
     db.TodoItems.Add(new TodoItem {Name = "Todo item 4"});
     db.TodoItems.Add(new TodoItem {Name = "Todo item 5"});
-    db.SaveChanges();
+    await db.SaveChangesAsync();
 }
 
